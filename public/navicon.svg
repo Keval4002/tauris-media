@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Bull head logo">
+  <!-- No background rectangle (transparent) -->
+  <defs>
+    <linearGradient id="hornGrad" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#FFD56B"/>
+      <stop offset="1" stop-color="#E3A81E"/>
+    </linearGradient>
+    <linearGradient id="faceLight" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#F5E7D6"/>
+      <stop offset="1" stop-color="#D8C2A5"/>
+    </linearGradient>
+    <linearGradient id="faceShade" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#D9C0A1"/>
+      <stop offset="1" stop-color="#C4A382"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Horns -->
+  <g transform="translate(0,-6)">
+    <path d="M120 140 C80 60, 40 40, 32 88 C28 110, 60 120, 96 144 C122 160, 140 164, 168 154 C182 149, 170 136, 150 132 C136 129, 130 144, 120 140 Z"
+          fill="url(#hornGrad)" stroke="#3b2a20" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M392 140 C432 60, 472 40, 480 88 C484 110, 452 120, 416 144 C390 160, 372 164, 344 154 C330 149, 342 136, 362 132 C376 129, 382 144, 392 140 Z"
+          fill="url(#hornGrad)" stroke="#3b2a20" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Ears -->
+  <path d="M110 190 C82 180, 78 210, 96 232 C112 252, 142 246, 128 216 C120 200, 116 194, 110 190 Z"
+        fill="#D8C2A5" stroke="#3b2a20" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M402 190 C430 180, 434 210, 416 232 C400 252, 370 246, 384 216 C392 200, 396 194, 402 190 Z"
+        fill="#D8C2A5" stroke="#3b2a20" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Main face -->
+  <path d="M256 120
+           C220 120, 180 140, 150 180
+           C120 220, 112 270, 120 310
+           C132 362, 188 404, 256 404
+           C324 404, 380 362, 392 310
+           C400 270, 392 220, 362 180
+           C332 140, 292 120, 256 120 Z"
+        fill="url(#faceLight)" stroke="#3b2a20" stroke-width="12" stroke-linejoin="round" filter="url(#softShadow)"/>
+
+  <!-- Face shading panels for depth -->
+  <path d="M256 120
+           C238 150, 212 170, 184 204
+           C166 228, 160 262, 168 296
+           C184 344, 224 376, 256 376
+           L256 120 Z"
+        fill="url(#faceShade)" opacity="0.95" />
+
+  <path d="M256 120
+           C274 150, 300 170, 328 204
+           C346 228, 352 262, 344 296
+           C328 344, 288 376, 256 376
+           L256 120 Z"
+        fill="#EBDCC6" opacity="0.95" />
+
+  <!-- Brow lines / center crease -->
+  <path d="M200 188 C228 172, 284 172, 312 188" fill="none" stroke="#3b2a20" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Eyes: whites -->
+  <g>
+    <ellipse cx="208" cy="240" rx="26" ry="18" fill="#ffffff"/>
+    <ellipse cx="304" cy="240" rx="26" ry="18" fill="#ffffff"/>
+    <!-- Pupils / intense look -->
+    <path d="M200 238 C206 246, 214 248, 218 240 C214 244, 206 246, 200 238 Z" fill="#1b1b1b"/>
+    <path d="M296 238 C302 246, 310 248, 314 240 C310 244, 302 246, 296 238 Z" fill="#1b1b1b"/>
+    <!-- small glints -->
+    <circle cx="212" cy="232" r="3" fill="#fff"/>
+    <circle cx="308" cy="232" r="3" fill="#fff"/>
+  </g>
+
+  <!-- Nose / muzzle -->
+  <path d="M196 316 C210 304, 302 304, 316 316 C316 330, 290 344, 256 344 C222 344, 196 330, 196 316 Z"
+        fill="#C9A58A" stroke="#3b2a20" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Nostrils -->
+  <ellipse cx="228" cy="318" rx="10" ry="14" fill="#3b2a20"/>
+  <ellipse cx="284" cy="318" rx="10" ry="14" fill="#3b2a20"/>
+
+  <!-- Lower chin -->
+  <path d="M220 356 C236 372, 276 372, 292 356 C284 372, 268 384, 256 384 C244 384, 228 372, 220 356 Z"
+        fill="#D8C2A5" stroke="#3b2a20" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- Fine outline for contrast -->
+  <path d="M256 120
+           C220 120, 180 140, 150 180
+           C120 220, 112 270, 120 310
+           C132 362, 188 404, 256 404
+           C324 404, 380 362, 392 310
+           C400 270, 392 220, 362 180
+           C332 140, 292 120, 256 120 Z"
+        fill="none" stroke="#2b1f18" stroke-width="4" stroke-linejoin="round" opacity="0.85"/>
+
+  <!-- Make the whole icon crisp at small sizes -->
+  <g transform="translate(0,0)">
+    <!-- subtle inner creases -->
+    <path d="M232 212 C236 206, 260 206, 276 212" stroke="#3b2a20" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.6"/>
+  </g>
+</svg>
