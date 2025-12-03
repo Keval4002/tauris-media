@@ -5,7 +5,7 @@ const Contact = () => {
     <div className='relative min-h-screen flex items-center justify-center'>
 
       <video autoPlay muted loop className='fixed top-0 left-0 w-full h-full object-cover z-10'>
-        <source src='../../public/videos/contact.mp4' type="video/mp4"/>
+        <source src='/videos/contact.mp4' type="video/mp4"/>
       </video>
 
       <div className='grid grid-cols-1 lg:grid-cols-2 w-full h-screen z-20 overflow-hidden'>
