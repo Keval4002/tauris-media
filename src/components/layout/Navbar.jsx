@@ -27,7 +27,7 @@ const Navbar = () => {
         {/* Center: Logo */}
         <div className="flex justify-center w-1/3">
           <img
-            src="../../../public/bullmascot.png"
+            src="/bullmascot.png"
             alt="logo"
             className="h-16 w-auto object-contain"
           />
