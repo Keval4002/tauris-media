@@ -40,7 +40,7 @@ const Highlights = () => {
       client: "Creative Content Collective",
       year: "2024",
       description: "Started editing short videos for local creators who had amazing stories but no editing skills. What began as helping one filmmaker turned into this whole network of content creators. Now we're editing everything from wedding videos to small business promos.",
-      image: "../public/New folder/img-1.jpg",
+      image: "/New folder/img-1.jpg",
       tags: ["Video Editing", "Content Creation", "Visual Stories"],
       awards: ["Creative Excellence 2024"],
       featured: true
@@ -52,7 +52,7 @@ const Highlights = () => {
       client: "Downtown Bar & Cafe Network",
       year: "2024",
       description: "Managing social media for the coolest spots in town. From crafting the perfect cocktail shot to capturing that Friday night energy, we help bars and cafes build their online vibe. Our posts have become the go-to for weekend plans.",
-      image: "../public/New folder/img-2.jpg",
+      image: "/New folder/img-2.jpg",
       tags: ["Social Media", "Nightlife", "Bar Marketing"],
       awards: [],
       featured: true
@@ -64,7 +64,7 @@ const Highlights = () => {
       client: "Emerging Fashion Brands",
       year: "2024",
       description: "We connect brands with the right models and photographers to create content that actually sells. From streetwear shoots to luxury fashion campaigns, our team knows how to capture that perfect shot that makes people stop scrolling.",
-      image: "../public/New folder/img-5.jpg",
+      image: "/New folder/img-5.jpg",
       tags: ["Fashion Photography", "Brand Shoots", "Model Coordination"],
       awards: ["Visual Impact 2024"],
       featured: false
@@ -76,7 +76,7 @@ const Highlights = () => {
       client: "Startup Brands",
       year: "2023",
       description: "When brands need that perfect launch moment, we make it happen. Professional shoots, model casting, creative direction - we handle the whole production. Our campaigns have helped launch over 20 successful product lines.",
-      image: "../public/New folder/img-6.jpg",
+      image: "/New folder/img-6.jpg",
       tags: ["Product Photography", "Model Casting", "Brand Launches"],
       awards: ["Launch Excellence 2023"],
       featured: false
