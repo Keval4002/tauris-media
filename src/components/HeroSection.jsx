@@ -31,7 +31,7 @@ const HeroSection = () => {
     
     const stickCount = isMobile ? 16 : 48;
     
-    const images = ["/public/New folder/img-12.jpg", "/public/New folder/img-5.jpg", "/public/New folder/img-9.jpg"];
+    const images = ["/New folder/img-12.jpg", "/New folder/img-5.jpg", "/New folder/img-9.jpg"];
     const colors = ["#311512", "#5e2c25", "#995435"];
     const texts = ["Experience your brand amplified.", "Focus your growth story.", "Style your digital scale."];
     
