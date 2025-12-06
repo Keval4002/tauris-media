@@ -74,7 +74,7 @@ const Navbar = () => {
                   {[
                     { name: "Work", path: "/work" },
                     { name: "About", path: "/about" },
-                    { name: "Projects", path: "/highlights" }
+                    { name: "Projects", path: "/projects" }
                   ].map((item, idx) => (
                     <motion.div
                       key={idx}
