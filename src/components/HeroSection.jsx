@@ -101,7 +101,7 @@ const HeroSection = () => {
       {/* --- 3. Email Link (Bottom Left) --- */}
       <motion.a 
         href="mailto:tauris.media@gmail.com"
-        className='absolute left-5 bottom-12 md:bottom-12 z-20 cursor-pointer group'
+        className='absolute left-5 bottom-20 md:bottom-12 z-20 cursor-pointer group'
         initial="initial"
         whileHover="hover"
       >
@@ -137,7 +137,7 @@ const HeroSection = () => {
       </motion.a>
 
       {/* --- 4. Narrative Text (Bottom Right) --- */}
-      <div className='absolute right-5 bottom-12 z-20 pointer-events-none overflow-hidden h-auto min-h-[30px] flex items-end justify-end'>
+      <div className='absolute right-5 bottom-20 md:bottom-12 z-20 pointer-events-none overflow-hidden h-auto min-h-[30px] flex items-end justify-end'>
         <AnimatePresence mode='wait'>
           <motion.div
             key={activeText} 

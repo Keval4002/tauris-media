@@ -75,7 +75,7 @@ const Projects = () => {
         <div className='sticky top-0 h-screen flex flex-col items-start justify-center overflow-hidden pt-24 pb-20 sm:pb-24 pl-0'>
           
           {/* Title - Fixed Animation */}
-          <div className='absolute bottom-6 left-0 w-full text-center z-20 pointer-events-none px-4'>
+          <div className='absolute bottom-20 md:bottom-6 left-0 w-full text-center z-20 pointer-events-none px-4'>
              <motion.div
                initial={{ opacity: 0, y: 50 }}
                whileInView={{ opacity: 1, y: 0 }} 
