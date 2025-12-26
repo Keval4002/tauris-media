@@ -53,7 +53,7 @@ const Projects = () => {
   const x = useTransform(scrollYProgress, [0, 1], ["0%", `-${scrollPercentage}%`]);
 
   return (
-    <div className='relative w-full bg-black'>
+    <div className='relative w-full bg-black min-h-screen'>
 
       {/* Fixed background video */}
       <div className='fixed top-0 left-0 w-full h-screen z-0'>
@@ -70,15 +70,16 @@ const Projects = () => {
         <div className='absolute top-0 left-0 w-full h-full bg-black/30' />
       </div>
 
-      {/* Horizontal scroll section */}
+      {/* Horizontal scroll section - REMOVED bg-black here so video shows */}
       <section ref={targetRef} className='relative h-[300vh] z-10'>
-        <div className='sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-20 sm:pb-24'>
+        <div className='sticky top-0 h-screen flex flex-col items-start justify-center overflow-hidden pt-24 pb-20 sm:pb-24 pl-0'>
           
-          {/* Title */}
-          <div className='absolute bottom-6 w-full text-center z-20 pointer-events-none px-4'>
+          {/* Title - Fixed Animation */}
+          <div className='absolute bottom-6 left-0 w-full text-center z-20 pointer-events-none px-4'>
              <motion.div
                initial={{ opacity: 0, y: 50 }}
-               animate={{ opacity: 1, y: 0 }}
+               whileInView={{ opacity: 1, y: 0 }} 
+               viewport={{ once: true }}
                transition={{ duration: 0.8 }}
                className="flex flex-col items-center gap-1 md:gap-2"
              >
@@ -88,10 +89,10 @@ const Projects = () => {
              </motion.div>
           </div>
 
-          {/* Horizontal scrolling cards */}
+          {/* Horizontal scrolling cards - Fixed Alignment */}
           <motion.div 
             style={{ x }} 
-            className='flex gap-4 sm:gap-6 md:gap-12 lg:gap-16 px-4 sm:px-8 md:px-16 lg:px-20 w-fit'
+            className='flex gap-4 sm:gap-6 md:gap-12 lg:gap-16 px-4 sm:px-8 md:px-16 lg:px-20 w-fit items-center'
           >
             {videos.map((item, idx) => (
               <Card key={idx} item={item} />
@@ -206,4 +207,4 @@ const Card = ({ item }) => {
   )
 }
 
-export default Projects
+export default Projects;

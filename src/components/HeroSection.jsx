@@ -1,546 +1,200 @@
-import React from 'react'
-import { motion } from "framer-motion"
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ImageStack } from './HeroSection/ImageStack';
+import { TextOverlay } from './HeroSection/TextOverlay';
+import { ProgressIndicator } from './HeroSection/ProgressIndicator';
+import { useScreenSize } from './HeroSection/hooks/useScreenSize';
+import { useHeroScroll } from './HeroSection/hooks/useHeroScroll';
+import { HERO_DATA, HERO_CONFIG, ANIMATION_EASING } from './HeroSection/constants';
+import { FiArrowUpRight } from 'react-icons/fi';
+
+const NARRATIVE_TEXTS = [
+  "Timeless Elegance",
+  "Visual Narrative",
+  "Global Resonance"
+];
 
 const HeroSection = () => {
-    // Use refs for values that shouldn't trigger re-renders
-    const scrollStateRef = React.useRef({
-        lastChangeTime: 0,
-        isLocked: false, // Hard lock during transitions - prevents ALL input
-        accumulatedDelta: 0,
-        lastWheelTime: 0,
-        lastTouchY: null,
-        isInitialized: false,
-    });
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [prevImageIndex, setPrevImageIndex] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  const { isMobile, screenWidth } = useScreenSize();
+  
+  useHeroScroll({
+    isInitialized,
+    isMobile,
+    imagesLength: HERO_DATA.images.length,
+    setCurrentImageIndex,
+    setPrevImageIndex
+  });
+  
+  const activeText = NARRATIVE_TEXTS[currentImageIndex % NARRATIVE_TEXTS.length];
+
+  const stickCount = isMobile ? HERO_CONFIG.stickCount.mobile : HERO_CONFIG.stickCount.desktop;
+  const bgIndex = Math.min(Math.max(currentImageIndex, 0), HERO_DATA.images.length - 1);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setPrevImageIndex(0);
     
-    const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-    const [prevImageIndex, setPrevImageIndex] = React.useState(0);
-    const [isInitialized, setIsInitialized] = React.useState(false);
-    const [isMobile, setIsMobile] = React.useState(() => 
-        typeof window !== 'undefined' ? window.innerWidth < 768 : false
-    );
-    const [screenWidth, setScreenWidth] = React.useState(() =>
-        typeof window !== 'undefined' ? window.innerWidth : 1024
-    );
+    const initTimer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 100);
     
-    // Configuration - tuned for absolutely no skips
-    const lockDuration = 900; // Hard lock duration - longer to ensure no double triggers
-    const scrollThreshold = isMobile ? 60 : 100; // Higher threshold to prevent accidental triggers
-    const idleResetTime = 300; // Time of no input to reset accumulated delta
-    
-    // Check screen size for responsive stick count
-    React.useEffect(() => {
-        const checkScreenSize = () => {
-            setIsMobile(window.innerWidth < 768);
-            setScreenWidth(window.innerWidth);
-        };
-        
-        checkScreenSize();
-        window.addEventListener('resize', checkScreenSize);
-        
-        return () => window.removeEventListener('resize', checkScreenSize);
-    }, []);
-    
-    const stickCount = isMobile ? 16 : 48;
-    
-    const images = ["/New folder/img-12.jpg", "/New folder/img-5.jpg", "/New folder/img-9.jpg"];
-    const colors = ["#311512", "#5e2c25", "#995435"];
-    const texts = ["Experience your brand amplified.", "Focus your growth story.", "Style your digital scale."];
+    return () => clearTimeout(initTimer);
+  }, []);
 
-    // Handle image change - lock is already set by caller
-    const changeImage = React.useCallback((direction) => {
-        const state = scrollStateRef.current;
-        
-        // Double-check lock (should already be set by caller)
-        if (!state.isLocked) {
-            state.isLocked = true;
-        }
-        
-        state.lastChangeTime = Date.now();
-        state.accumulatedDelta = 0;
-        state.lastTouchY = null;
-        
-        // Update image index
-        if (direction > 0) {
-            setCurrentImageIndex(prev => {
-                setPrevImageIndex(prev);
-                return (prev + 1) % images.length;
-            });
-        } else {
-            setCurrentImageIndex(prev => {
-                setPrevImageIndex(prev);
-                return prev === 0 ? images.length - 1 : prev - 1;
-            });
-        }
-        
-        // Release lock after animation completes
-        setTimeout(() => {
-            state.isLocked = false;
-            state.accumulatedDelta = 0;
-            state.lastTouchY = null;
-        }, lockDuration);
-        
-        return true;
-    }, [images.length, lockDuration]);
-
-    // Wheel event handler (desktop) - with pre-lock to prevent any double triggers
-    React.useEffect(() => {
-        if (!isInitialized) return;
-        
-        const handleWheel = (e) => {
-            e.preventDefault();
-            
-            const state = scrollStateRef.current;
-            
-            // If locked, ignore completely - this is the primary guard
-            if (state.isLocked) {
-                return;
-            }
-            
-            const now = Date.now();
-            const timeSinceLastWheel = now - state.lastWheelTime;
-            
-            // Reset accumulated delta if user stopped scrolling
-            if (timeSinceLastWheel > idleResetTime) {
-                state.accumulatedDelta = 0;
-            }
-            state.lastWheelTime = now;
-            
-            // Normalize delta - cap extreme values from fast scrolling
-            const normalizedDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 50);
-            
-            // Accumulate delta
-            state.accumulatedDelta += normalizedDelta;
-            
-            // Check if threshold is reached
-            if (Math.abs(state.accumulatedDelta) >= scrollThreshold) {
-                // CRITICAL: Lock FIRST before anything else
-                state.isLocked = true;
-                
-                const direction = state.accumulatedDelta > 0 ? 1 : -1;
-                state.accumulatedDelta = 0; // Reset immediately
-                
-                changeImage(direction);
-            }
-        };
-
-        window.addEventListener('wheel', handleWheel, { passive: false });
-        
-        return () => {
-            window.removeEventListener('wheel', handleWheel);
-        };
-    }, [isInitialized, scrollThreshold, changeImage, idleResetTime]);
-
-    // Touch event handlers (mobile) - with pre-lock
-    React.useEffect(() => {
-        if (!isInitialized) return;
-        
-        const handleTouchStart = (e) => {
-            const state = scrollStateRef.current;
-            if (state.isLocked) return;
-            
-            state.lastTouchY = e.touches[0].clientY;
-            state.accumulatedDelta = 0;
-        };
-        
-        const handleTouchMove = (e) => {
-            const state = scrollStateRef.current;
-            
-            // If locked or no touch start, ignore
-            if (state.isLocked || state.lastTouchY === null) {
-                e.preventDefault();
-                return;
-            }
-            
-            const currentY = e.touches[0].clientY;
-            const deltaY = state.lastTouchY - currentY;
-            
-            state.accumulatedDelta += deltaY;
-            state.lastTouchY = currentY;
-            
-            // Check if threshold is reached
-            if (Math.abs(state.accumulatedDelta) >= scrollThreshold) {
-                // CRITICAL: Lock FIRST before anything else
-                state.isLocked = true;
-                
-                const direction = state.accumulatedDelta > 0 ? 1 : -1;
-                state.accumulatedDelta = 0;
-                state.lastTouchY = null;
-                
-                e.preventDefault();
-                changeImage(direction);
-            }
-        };
-        
-        const handleTouchEnd = () => {
-            const state = scrollStateRef.current;
-            if (!state.isLocked) {
-                state.lastTouchY = null;
-                state.accumulatedDelta = 0;
-            }
-        };
-
-        window.addEventListener('touchstart', handleTouchStart, { passive: true });
-        window.addEventListener('touchmove', handleTouchMove, { passive: false });
-        window.addEventListener('touchend', handleTouchEnd, { passive: true });
-        
-        return () => {
-            window.removeEventListener('touchstart', handleTouchStart);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleTouchEnd);
-        };
-    }, [isInitialized, scrollThreshold, changeImage]);
-
-    // Keyboard navigation support - with same lock protection
-    React.useEffect(() => {
-        if (!isInitialized) return;
-        
-        const handleKeyDown = (e) => {
-            const state = scrollStateRef.current;
-            
-            // Prevent key repeat and check lock
-            if (e.repeat || state.isLocked) return;
-            
-            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-                e.preventDefault();
-                changeImage(1);
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-                e.preventDefault();
-                changeImage(-1);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isInitialized, changeImage]);
-
-    const bgIndex = Math.min(Math.max(currentImageIndex, 0), images.length - 1);
-
-    // Initialize component - only runs once on mount
-    React.useEffect(() => {
-        setCurrentImageIndex(0);
-        setPrevImageIndex(0);
-        
-        // Reset scroll state ref
-        scrollStateRef.current = {
-            lastChangeTime: 0,
-            isLocked: false,
-            accumulatedDelta: 0,
-            lastWheelTime: 0,
-            lastTouchY: null,
-            isInitialized: false,
-        };
-        
-        // Prevent default scroll behavior
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        
-        const initTimer = setTimeout(() => {
-            setIsInitialized(true);
-            scrollStateRef.current.isInitialized = true;
-        }, 100);
-        
-        return () => {
-            clearTimeout(initTimer);
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-        };
-    }, []);
-    
   return (
-    <>
-      {/* Fixed hero section that stays in place */}
-      <motion.section
-        className='fixed top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center z-10'
-        animate={{ backgroundColor: colors[bgIndex] }}
-        transition={{ backgroundColor: { duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.2 } }}
-      >
-        {/* Responsive image container */}
-        <div className="image-stack-container relative
-          w-[calc(100vw-2rem)] mx-4 aspect-[1.77/1]
-          sm:w-[calc(100vw-3rem)] sm:mx-6
-          md:w-[500px] md:h-[282px] md:mx-auto md:aspect-auto
-          lg:w-[600px] lg:h-[339px] lg:mx-auto lg:aspect-auto
-          xl:w-[700px] xl:h-[395px]
-          2xl:w-[785px] 2xl:h-[443px]">
+    <motion.section
+      className='fixed top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center z-10'
+      animate={{ backgroundColor: HERO_DATA.colors[bgIndex] }}
+      transition={{ 
+        backgroundColor: { 
+          duration: 1.2, 
+          ease: ANIMATION_EASING.background, 
+          delay: 0.2 
+        } 
+      }}
+    >
+      {/* --- 1. Index Indicator (Top Left) --- */}
+      <div className='absolute left-5 top-24 md:left-12 md:top-32 z-20 pointer-events-none'>
+          <h3 className='text-sm md:text-lg text-[#e7dace] font-light font-manrope'>
+            [ 0{currentImageIndex+1} ]
+          </h3>
+      </div>
 
-        {images.map((src, index) => {
-          const isActive = index === currentImageIndex;
+      {/* --- 2. Adaptive Scroll Indicator (Top Right) --- */}
+      {/* Mobile: flex-row (Text left, Line right)
+         Desktop: flex-col (Text top, Line bottom) 
+      */}
+      <div className='absolute right-5 top-24 md:right-12 md:top-32 z-20 pointer-events-none flex flex-row items-center md:flex-col md:items-end gap-2'>
+          <h3 className='text-sm md:text-lg text-[#e7dace] font-light font-manrope tracking-wide'>
+            Scroll
+          </h3>
           
-          // Check if this image is transitioning from last position to front
-          // This happens when we move from the last image (images.length - 1) to the first (0)
-          const isComingFromLast = isActive && 
-            currentImageIndex === 0 && prevImageIndex === images.length - 1;
-          
-          // Simple stack logic: assign positions relative to current image
-          let stackPosition;
-          if (isActive) {
-            stackPosition = 0; // Front position
-          } else {
-            // For the previous image (the one that was just in front), put it at position 1
-            const previousFrontIndex = (currentImageIndex - 1 + images.length) % images.length;
-            if (index === previousFrontIndex) {
-              stackPosition = 1; // Previous front image goes to second position
-            } else {
-              stackPosition = 2; // All other images go to back position
-            }
-          }
-          
-          // Separate stacking systems for different screen sizes - use state for consistency
-          const width = screenWidth;
-          let scale, y, opacity;
-          
-          if (width >= 768) {
-            // Desktop/Tablet stacking system (768px+)
-            const getDesktopScale = (position) => {
-              if (position === 0) return 1;
-              
-              if (width >= 1024) {
-                return Math.max(0.7, 1 - 0.15 * position);
-              } else {
-                return Math.max(0.75, 1 - 0.12 * position);
-              }
-            };
-            
-            const getDesktopOffset = () => {
-              if (width >= 1536) return 40;
-              if (width >= 1280) return 35;
-              if (width >= 1024) return 30;
-              return 25;
-            };
-            
-            scale = getDesktopScale(stackPosition);
-            
-            if (isComingFromLast && isActive) {
-              y = 0;
-              opacity = 1;
-            } else {
-              y = stackPosition === 0 ? 0 : (-getDesktopOffset() * stackPosition);
-              opacity = stackPosition === 0 ? 1 : Math.max(0.4, 1 - 0.25 * stackPosition);
-            }
-            
-          } else {
-            // Mobile stacking system (below 768px) - optimized with granular breakpoints
-            const getMobileScale = (position) => {
-              if (position === 0) return 1;
-              
-              if (width >= 700) {
-                // Near tablet range: more pronounced stacking
-                return Math.max(0.70, 1 - 0.15 * position);
-              } else if (width >= 600) {
-                // Medium mobile: balanced stacking
-                return Math.max(0.72, 1 - 0.14 * position);
-              } else if (width >= 450) {
-                // Small mobile: moderate stacking (perfect around 550px)
-                return Math.max(0.75, 1 - 0.12 * position);
-              } else {
-                // Very small mobile: subtle stacking (for around 350px)
-                return Math.max(0.80, 1 - 0.10 * position);
-              }
-            };
-            
-            const getMobileOffset = () => {
-              if (width >= 700) return 35; // Near tablet: much larger offset for clear visibility
-              if (width >= 600) return 30; // Medium mobile: increased visibility
-              if (width >= 450) return 25; // Small mobile: clear stacking
-              return 20; // Very small mobile: visible but not excessive
-            };
-            
-            const getMobileOpacity = (position) => {
-              if (position === 0) return 1;
-              if (width >= 600) {
-                // Larger mobiles: standard opacity reduction
-                return Math.max(0.5, 1 - 0.2 * position);
-              } else {
-                // Smaller mobiles: more visible background images
-                return Math.max(0.6, 1 - 0.15 * position);
-              }
-            };
-            
-            scale = getMobileScale(stackPosition);
-            
-            if (isComingFromLast && isActive) {
-              y = 0;
-              opacity = 1;
-            } else {
-              y = stackPosition === 0 ? 0 : (-getMobileOffset() * stackPosition);
-              opacity = getMobileOpacity(stackPosition);
-            }
-          }
-          
-          const zIndex = stackPosition === 0 ? (isComingFromLast ? 35 : 30) : Math.max(5, 30 - 8 * stackPosition);
-
-          // Responsive slide distance for coming-from-last effect
-          const responsiveSlideDistance = () => {
-            if (width >= 768) {
-              // Desktop system slide distances
-              if (width >= 1536) return -200;
-              if (width >= 1280) return -180;
-              if (width >= 1024) return -160;
-              return -140;
-            } else {
-              // Mobile system slide distances - granular breakpoints
-              if (width >= 700) return -90;  // Near tablet
-              if (width >= 600) return -80;  // Medium mobile
-              if (width >= 450) return -70;  // Small mobile
-              return -60; // Very small mobile
-            }
-          };
-
-          return (
-            <motion.img
-              key={index}
-              src={src}
-              className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 object-cover w-full h-full'
-              animate={{ 
-                y,
-                scale, 
-                zIndex, 
-                opacity
+          {/* Line Container: Horizontal (w-12 h-px) on Mobile, Vertical (w-px h-12) on Desktop */}
+          <div className='relative bg-[#e7dace]/30 overflow-hidden w-8 h-[1px] md:w-[1px] md:h-12'>
+            <motion.div 
+              className='absolute bg-[#e7dace]'
+              // Switch animation based on screen size
+              style={{
+                top: 0,
+                left: 0,
+                width: isMobile ? "100%" : "100%", 
+                height: isMobile ? "100%" : "100%" 
               }}
-              initial={isComingFromLast ? { y: responsiveSlideDistance(), opacity: 0 } : false}
+              animate={isMobile 
+                ? { width: ["0%", "100%", "0%"], left: ["0%", "0%", "100%"] } // Horizontal Anim
+                : { height: ["0%", "100%", "0%"], top: ["0%", "0%", "100%"] }   // Vertical Anim
+              }
               transition={{ 
-                y: { 
-                  duration: 0.6,
-                  ease: [0.33, 1, 0.68, 1] // Cubic-bezier for smooth deceleration
-                },
-                scale: { 
-                  duration: 0.6, 
-                  ease: [0.33, 1, 0.68, 1]
-                },
-                opacity: { 
-                  duration: isComingFromLast ? 0.4 : 0.5,
-                  ease: [0.4, 0, 0.2, 1] // Material Design standard easing
-                },
-                zIndex: { duration: 0.01, ease: "linear" }
+                duration: 2, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                repeatDelay: 0.5 
               }}
             />
-          )
-        })}
-
-        {/* Text overlays for each image */}
-        <div className="absolute 
-          -bottom-2
-          left-1/2 -translate-x-1/2 z-40 w-full text-center">
-          {texts.map((text, index) => {
-            const isActive = index === currentImageIndex;
-            
-            return (
-              <motion.div
-                key={index}
-                className="absolute w-full 
-                  px-3 xs:px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16"
-                initial={{ 
-                  opacity: index === 0 ? 1 : 0, 
-                  y: index === 0 ? 0 : 15 
-                }}
-                animate={{
-                  opacity: isActive ? 1 : 0,
-                  y: isActive ? 0 : 15,
-                }}
-                transition={{
-                  duration: 0.5,
-                  ease: [0.33, 1, 0.68, 1],
-                  delay: isActive && isInitialized ? 0.35 : 0
-                }}
-              >
-                <p className="text-white font-medium 
-                  text-xl md:text-2xl lg:text-3xl
-                  drop-shadow-lg 
-                  leading-tight xs:leading-snug sm:leading-normal md:leading-relaxed
-                  tracking-wide xs:tracking-wider sm:tracking-widest
-                  max-w-xs xs:max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-2xl
-                  mx-auto font-cormorant">
-                  {text}
-                </p>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        {/* Horizontal progress line */}
-        <div className="fixed bottom-4 left-0 w-screen z-50">
-          <div className="flex items-center w-full px-4">
-            <div className="flex items-center justify-evenly w-full">
-              {/* Progress sticks - section 1 */}
-              {Array.from({ length: stickCount }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-2 w-px transition-all duration-500 ease-in-out"
-                  style={{ 
-                    backgroundColor: '#f1e6d2',
-                    opacity: 0.6
-                  }}
-                />
-              ))}
-              
-              {/* First counter */}
-              <div className={`text-lg sm:text-xl font-light text-center transition-colors duration-300 font-cormorant ${
-                currentImageIndex === 0 ? 'text-sticks' : 'text-white'
-              }`}>
-                [01]
-              </div>
-              
-              {/* Progress sticks - section 2 */}
-              {Array.from({ length: stickCount }).map((_, index) => (
-                <div
-                  key={index + stickCount}
-                  className="h-2 w-px transition-all duration-500 ease-in-out"
-                  style={{ 
-                    backgroundColor: '#f1e6d2',
-                    opacity: 0.6
-                  }}
-                />
-              ))}
-              
-              {/* Second counter */}
-              <div className={`text-lg sm:text-xl font-light text-center transition-colors duration-300 font-cormorant ${
-                currentImageIndex === 1 ? 'text-sticks' : 'text-white'
-              }`}>
-                [02]
-              </div>
-              
-              {/* Progress sticks - section 3 */}
-              {Array.from({ length: stickCount }).map((_, index) => (
-                <div
-                  key={index + stickCount * 2}
-                  className="h-2 w-px transition-all duration-500 ease-in-out"
-                  style={{ 
-                    backgroundColor: '#f1e6d2',
-                    opacity: 0.6
-                  }}
-                />
-              ))}
-              
-              {/* Third counter */}
-              <div className={`text-lg sm:text-xl font-light text-center transition-colors duration-300 font-cormorant ${
-                currentImageIndex === 2 ? 'text-sticks' : 'text-white'
-              }`}>
-                [03]
-              </div>
-              
-              {/* Final progress sticks */}
-              {Array.from({ length: stickCount }).map((_, index) => (
-                <div
-                  key={index + stickCount * 3}
-                  className="h-2 w-px transition-all duration-500 ease-in-out"
-                  style={{ 
-                    backgroundColor: '#f1e6d2',
-                    opacity: 0.6
-                  }}
-                />
-              ))}
-            </div>
           </div>
+      </div>
+
+      {/* --- 3. Email Link (Bottom Left) --- */}
+      <motion.a 
+        href="mailto:tauris.media@gmail.com"
+        className='absolute left-5 bottom-12 md:bottom-12 z-20 cursor-pointer group'
+        initial="initial"
+        whileHover="hover"
+      >
+        <div className='flex items-center gap-1'>
+          <div className='relative'>
+            {/* Reduced text size for mobile (text-xs) */}
+            <h3 className='text-xs md:text-sm text-[#e7dace] font-light font-manrope'>
+              tauris.media@gmail.com
+            </h3>
+            
+            <motion.span
+              className='absolute bottom-0 left-0 h-[1px] bg-[#e7dace] w-full origin-right'
+              variants={{
+                initial: { scaleX: 1 }, 
+                hover: { 
+                  scaleX: 0, 
+                  transition: { duration: 0.3, ease: "easeOut" } 
+                }
+              }}
+            />
+          </div>
+
+          <motion.div
+            variants={{
+              initial: { x: 0, y: 0, opacity: 0.7 },
+              hover: { x: 2, y: -2, opacity: 1 }
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            <FiArrowUpRight className='text-[#e7dace] text-sm md:text-xl' />
+          </motion.div>
         </div>
+      </motion.a>
 
-        </div> {/* Close image-stack-container */}
+      {/* --- 4. Narrative Text (Bottom Right) --- */}
+      <div className='absolute right-5 bottom-12 z-20 pointer-events-none overflow-hidden h-auto min-h-[30px] flex items-end justify-end'>
+        <AnimatePresence mode='wait'>
+          <motion.div
+            key={activeText} 
+            className='flex flex-col items-end'
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.16, 1, 0.3, 1] 
+            }}
+          >
+            {/* Reduced text size for mobile (text-xs) to match Email */}
+            <h3 className='text-xs md:text-lg text-[#e7dace] font-light font-manrope text-right'>
+              {activeText}
+            </h3>
+            
+            <motion.span 
+              className='h-[1px] bg-[#e7dace] opacity-60'
+              initial={{ width: 0 }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 0.8, delay: 0.2, ease: "circOut" }}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-      </motion.section>
-    </>
-  )
-}
+      {/* --- Main Image Stack Container --- */}
+      <div className="image-stack-container relative
+        w-[calc(100vw-2rem)] mx-4 aspect-[1.77/1]
+        sm:w-[calc(100vw-3rem)] sm:mx-6
+        md:w-[500px] md:h-[282px] md:mx-auto md:aspect-auto
+        lg:w-[600px] lg:h-[339px] lg:mx-auto lg:aspect-auto
+        xl:w-[700px] xl:h-[395px]
+        2xl:w-[785px] 2xl:h-[443px]">
+        
+        <ImageStack 
+          images={HERO_DATA.images}
+          currentImageIndex={currentImageIndex}
+          prevImageIndex={prevImageIndex}
+          screenWidth={screenWidth}
+        />
 
-export default HeroSection
+        <TextOverlay 
+          texts={HERO_DATA.texts}
+          currentImageIndex={currentImageIndex}
+          isInitialized={isInitialized}
+        />
+
+        <ProgressIndicator 
+          stickCount={stickCount}
+          currentImageIndex={currentImageIndex}
+          totalImages={HERO_DATA.images.length}
+        />
+      </div>
+    </motion.section>
+  );
+};
+
+export default HeroSection;

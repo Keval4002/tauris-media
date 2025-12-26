@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Cormorant:ital,wght@0,300..700;1,300..700&family=Libre+Baskerville:ital,wght@0,400..700;1,400..700&family=Libre+Franklin:ital,wght@0,100..900;1,100..900&family=Questrial&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Cormorant:ital,wght@0,300..700;1,300..700&family=Libre+Baskerville:ital,wght@0,400..700;1,400..700&family=Libre+Franklin:ital,wght@0,100..900;1,100..900&family=Manrope:wght@200..800&family=Questrial&display=swap');
 @import "tailwindcss";
 
 @theme{
@@ -14,6 +14,7 @@
   --font-libre-franklin:'Libre Franklin';
   --font-abril-fatface:'Abril FatFace', serif;
   --font-cormorant:'Cormorant', serif;
+  --font-manrope:'Manrope', serif;
 
   --color-hero-primary:oklch(38.9% 28.4 28.0);
   --color-hero-secondary:oklch(68.8% 24.0 36.1);

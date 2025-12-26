@@ -5,19 +5,20 @@ import Projects from './pages/Projects'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Navbar from './components/layout/Navbar'
+import { HeroProvider } from './contexts/HeroContext'
 
 const App = () => {
   return(
-    <>
-    <Navbar />
-    <Routes>
-      <Route path="/" element={<Home/>}/>
-      <Route path="/work" element={<Home/>}/>
-      <Route path="/about" element={<About/>}/>
-      <Route path="/projects" element={<Projects/>}/>
-      <Route path="/contact" element={<Contact/>}/>
-    </Routes>
-    </>
+    <HeroProvider>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home/>}/>
+        <Route path="/work" element={<Home/>}/>
+        <Route path="/about" element={<About/>}/>
+        <Route path="/projects" element={<Projects/>}/>
+        <Route path="/contact" element={<Contact/>}/>
+      </Routes>
+    </HeroProvider>
   )
 }
 

@@ -1,42 +1,88 @@
 import React from "react";
 import { Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaLinkedin, FaInstagram } from "react-icons/fa";
+import { useHeroContext } from "../../contexts/HeroContext";
 
 const Navbar = () => {
   const [open, setOpen] = React.useState(false);
+  const [visible, setVisible] = React.useState(true);
+  const [lastScrollY, setLastScrollY] = React.useState(0);
+  const location = useLocation();
+  const { currentImageIndex } = useHeroContext();
+  
+  const isHomePage = location.pathname === '/' || location.pathname === '/work';
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // On home page, keep navbar always visible (hero section controls scroll)
+      if (isHomePage) {
+        setVisible(true);
+        return;
+      }
+      
+      // For other pages: hide on scroll down, show on scroll up
+      if (currentScrollY < 10) {
+        // Always show at top
+        setVisible(true);
+      } else if (currentScrollY > lastScrollY) {
+        // Scrolling down - hide navbar
+        setVisible(false);
+      } else {
+        // Scrolling up - show navbar
+        setVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY, isHomePage]);
 
   return (
-    <div className="fixed top-0 left-0 w-full z-50 bg-transparent">
+    <motion.div 
+      className="fixed top-0 left-0 w-full z-50 bg-transparent"
+      initial={{ y: 0 }}
+      animate={{ y: visible ? 0 : -100 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+    >
       {/* Navbar */}
-      <div className="flex items-center px-4 sm:px-6 md:px-8 lg:px-12 pl-8 h-24 sm:h-24 md:h-24 lg:h-24">
+      <div className="flex items-center px-4 sm:px-6 md:px-8 lg:px-12 pl-3 md:pl-8 h-16 sm:h-17 md:h-18 bg-transparent">
         {/* Left: Brand */}
-        <div className="flex items-center w-1/3">
-          <h1 className="text-white/80 text-lg font-libre-franklin font-extralight">
+        <div className="flex items-center w-1/3 group">
+          <Link to="/" className="flex items-baseline gap-1 sm:gap-2 md:gap-2.5 no-underline">
             <span
-              className="inline-block font-baskerville text-white sm:text-4xl md:text-5xl font-extralight"
-              style={{ transform: "skewX(-15deg)" }}
+              className="font-baskerville text-white text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-normal tracking-[0.10em] sm:tracking-[0.12em] transition-all duration-300 group-hover:tracking-[0.16em] group-hover:text-white"
+              style={{ fontVariant: 'small-caps' }}
             >
               Tauris
-            </span>{" "}
-            Media
-          </h1>
+            </span>
+            <span className="text-white/30 text-base xs:text-lg sm:text-xl font-light">|</span>
+            <span
+              className="font-libre-franklin text-white/80 text-xs xs:text-sm sm:text-base md:text-lg font-extralight tracking-[0.18em] sm:tracking-[0.25em] uppercase transition-all duration-300 group-hover:text-white group-hover:tracking-[0.3em]"
+            >
+              Media
+            </span>
+          </Link>
         </div>
 
         {/* Center: Logo */}
-        <div className="flex justify-center w-1/3">
+        <div className="flex justify-center w-1/3 pl-5">
           <img
             src="/bullmascot.png"
             alt="logo"
-            className="h-16 w-auto object-contain"
+            className="h-12 sm:h-13 md:h-14 w-auto object-contain opacity-80"
           />
         </div>
 
         {/* Right: Hamburger */}
-        <div className="text-white flex justify-end w-1/3">
+        <div className="text-white/70 flex justify-end w-1/3">
           <Menu
-            className="h-8 w-8 md:h-10 md:w-10 lg:h-12 lg:w-12 cursor-pointer hover:scale-110 transition-transform"
+            className="h-7 w-7 md:h-8 md:w-8 lg:h-9 lg:w-9 cursor-pointer hover:text-white hover:scale-105 transition-all duration-300"
             onClick={() => {
               setOpen(true);
             }}
@@ -187,7 +233,7 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 
