@@ -23,9 +23,9 @@ const HeroSection = () => {
     );
     
     // Configuration - tuned for absolutely no skips
-    const lockDuration = 800; // Hard lock duration - no input accepted during this time
-    const scrollThreshold = isMobile ? 50 : 70; // Threshold to trigger change
-    const idleResetTime = 250; // Time of no input to reset accumulated delta
+    const lockDuration = 900; // Hard lock duration - longer to ensure no double triggers
+    const scrollThreshold = isMobile ? 60 : 100; // Higher threshold to prevent accidental triggers
+    const idleResetTime = 300; // Time of no input to reset accumulated delta
     
     // Check screen size for responsive stick count
     React.useEffect(() => {
@@ -46,19 +46,18 @@ const HeroSection = () => {
     const colors = ["#311512", "#5e2c25", "#995435"];
     const texts = ["Experience your brand amplified.", "Focus your growth story.", "Style your digital scale."];
 
-    // Handle image change - with hard lock to prevent any skips
+    // Handle image change - lock is already set by caller
     const changeImage = React.useCallback((direction) => {
         const state = scrollStateRef.current;
         
-        // If locked, reject immediately - no exceptions
-        if (state.isLocked) {
-            return false;
+        // Double-check lock (should already be set by caller)
+        if (!state.isLocked) {
+            state.isLocked = true;
         }
         
-        // Engage hard lock immediately
-        state.isLocked = true;
         state.lastChangeTime = Date.now();
         state.accumulatedDelta = 0;
+        state.lastTouchY = null;
         
         // Update image index
         if (direction > 0) {
@@ -77,12 +76,13 @@ const HeroSection = () => {
         setTimeout(() => {
             state.isLocked = false;
             state.accumulatedDelta = 0;
+            state.lastTouchY = null;
         }, lockDuration);
         
         return true;
     }, [images.length, lockDuration]);
 
-    // Wheel event handler (desktop) - simplified and bulletproof
+    // Wheel event handler (desktop) - with pre-lock to prevent any double triggers
     React.useEffect(() => {
         if (!isInitialized) return;
         
@@ -91,7 +91,7 @@ const HeroSection = () => {
             
             const state = scrollStateRef.current;
             
-            // If locked, ignore completely
+            // If locked, ignore completely - this is the primary guard
             if (state.isLocked) {
                 return;
             }
@@ -106,14 +106,19 @@ const HeroSection = () => {
             state.lastWheelTime = now;
             
             // Normalize delta - cap extreme values from fast scrolling
-            const normalizedDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 80);
+            const normalizedDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 50);
             
             // Accumulate delta
             state.accumulatedDelta += normalizedDelta;
             
             // Check if threshold is reached
             if (Math.abs(state.accumulatedDelta) >= scrollThreshold) {
+                // CRITICAL: Lock FIRST before anything else
+                state.isLocked = true;
+                
                 const direction = state.accumulatedDelta > 0 ? 1 : -1;
+                state.accumulatedDelta = 0; // Reset immediately
+                
                 changeImage(direction);
             }
         };
@@ -125,7 +130,7 @@ const HeroSection = () => {
         };
     }, [isInitialized, scrollThreshold, changeImage, idleResetTime]);
 
-    // Touch event handlers (mobile) - simplified and bulletproof
+    // Touch event handlers (mobile) - with pre-lock
     React.useEffect(() => {
         if (!isInitialized) return;
         
@@ -142,7 +147,7 @@ const HeroSection = () => {
             
             // If locked or no touch start, ignore
             if (state.isLocked || state.lastTouchY === null) {
-                if (state.isLocked) e.preventDefault();
+                e.preventDefault();
                 return;
             }
             
@@ -154,7 +159,13 @@ const HeroSection = () => {
             
             // Check if threshold is reached
             if (Math.abs(state.accumulatedDelta) >= scrollThreshold) {
+                // CRITICAL: Lock FIRST before anything else
+                state.isLocked = true;
+                
                 const direction = state.accumulatedDelta > 0 ? 1 : -1;
+                state.accumulatedDelta = 0;
+                state.lastTouchY = null;
+                
                 e.preventDefault();
                 changeImage(direction);
             }
@@ -162,8 +173,8 @@ const HeroSection = () => {
         
         const handleTouchEnd = () => {
             const state = scrollStateRef.current;
-            state.lastTouchY = null;
             if (!state.isLocked) {
+                state.lastTouchY = null;
                 state.accumulatedDelta = 0;
             }
         };
