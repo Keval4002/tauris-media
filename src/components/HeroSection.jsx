@@ -2,25 +2,36 @@ import React from 'react'
 import { motion } from "framer-motion"
 
 const HeroSection = () => {
-    const containerRef = React.useRef(null);
+    // Use refs for values that shouldn't trigger re-renders
+    const scrollStateRef = React.useRef({
+        lastChangeTime: 0,
+        isLocked: false, // Hard lock during transitions - prevents ALL input
+        accumulatedDelta: 0,
+        lastWheelTime: 0,
+        lastTouchY: null,
+        isInitialized: false,
+    });
     
-    const [viewportHeight, setViewportHeight] = React.useState(800);
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
     const [prevImageIndex, setPrevImageIndex] = React.useState(0);
-    const [scrollThreshold] = React.useState(() => {
-        // Adjust threshold based on screen size for better responsiveness
-        return window.innerWidth < 768 ? 1 : 1; // Keep sensitive on all devices
-    }); // Maximum sensitivity - 1px scroll triggers change
     const [isInitialized, setIsInitialized] = React.useState(false);
-    const [lastChangeTime, setLastChangeTime] = React.useState(0);
-    const [cooldownPeriod] = React.useState(200); // Minimal cooldown for smooth flow
-    const [isChangingImage, setIsChangingImage] = React.useState(false);
-    const [isMobile, setIsMobile] = React.useState(false);
+    const [isMobile, setIsMobile] = React.useState(() => 
+        typeof window !== 'undefined' ? window.innerWidth < 768 : false
+    );
+    const [screenWidth, setScreenWidth] = React.useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth : 1024
+    );
+    
+    // Configuration - tuned for absolutely no skips
+    const lockDuration = 800; // Hard lock duration - no input accepted during this time
+    const scrollThreshold = isMobile ? 50 : 70; // Threshold to trigger change
+    const idleResetTime = 250; // Time of no input to reset accumulated delta
     
     // Check screen size for responsive stick count
     React.useEffect(() => {
         const checkScreenSize = () => {
             setIsMobile(window.innerWidth < 768);
+            setScreenWidth(window.innerWidth);
         };
         
         checkScreenSize();
@@ -34,101 +45,198 @@ const HeroSection = () => {
     const images = ["/New folder/img-12.jpg", "/New folder/img-5.jpg", "/New folder/img-9.jpg"];
     const colors = ["#311512", "#5e2c25", "#995435"];
     const texts = ["Experience your brand amplified.", "Focus your growth story.", "Style your digital scale."];
-    
-    // Simplified scroll handling to eliminate delays
+
+    // Handle image change - with hard lock to prevent any skips
+    const changeImage = React.useCallback((direction) => {
+        const state = scrollStateRef.current;
+        
+        // If locked, reject immediately - no exceptions
+        if (state.isLocked) {
+            return false;
+        }
+        
+        // Engage hard lock immediately
+        state.isLocked = true;
+        state.lastChangeTime = Date.now();
+        state.accumulatedDelta = 0;
+        
+        // Update image index
+        if (direction > 0) {
+            setCurrentImageIndex(prev => {
+                setPrevImageIndex(prev);
+                return (prev + 1) % images.length;
+            });
+        } else {
+            setCurrentImageIndex(prev => {
+                setPrevImageIndex(prev);
+                return prev === 0 ? images.length - 1 : prev - 1;
+            });
+        }
+        
+        // Release lock after animation completes
+        setTimeout(() => {
+            state.isLocked = false;
+            state.accumulatedDelta = 0;
+        }, lockDuration);
+        
+        return true;
+    }, [images.length, lockDuration]);
+
+    // Wheel event handler (desktop) - simplified and bulletproof
     React.useEffect(() => {
         if (!isInitialized) return;
         
-        let lastScrollTime = 0;
-        const scrollDebounce = 50; // Minimal debounce
-        const maxScroll = viewportHeight * 2;
-        const midScroll = viewportHeight;
-        
-        const handleScroll = () => {
-            const currentTime = Date.now();
+        const handleWheel = (e) => {
+            e.preventDefault();
             
-            // Simple time-based throttling instead of complex state management
-            if (currentTime - lastScrollTime < scrollDebounce) return;
-            if (isChangingImage) return;
+            const state = scrollStateRef.current;
             
-            const scrollY = window.scrollY;
-            const scrollDifference = scrollY - midScroll;
+            // If locked, ignore completely
+            if (state.isLocked) {
+                return;
+            }
             
-            // Direct image change without multiple timeout layers
-            if (Math.abs(scrollDifference) >= scrollThreshold && 
-                (currentTime - lastChangeTime) >= cooldownPeriod) {
-                
-                setIsChangingImage(true);
-                lastScrollTime = currentTime;
-                
-                if (scrollDifference > 0) {
-                    setCurrentImageIndex(prev => {
-                        setPrevImageIndex(prev);
-                        return (prev + 1) % images.length;
-                    });
-                } else {
-                    setCurrentImageIndex(prev => {
-                        setPrevImageIndex(prev);
-                        return prev === 0 ? images.length - 1 : prev - 1;
-                    });
-                }
-                
-                setLastChangeTime(currentTime);
-                
-                // Simple timeout to unlock
-                setTimeout(() => setIsChangingImage(false), 600);
-                
-                // Reset scroll position immediately
-                setTimeout(() => window.scrollTo(0, midScroll), 10);
+            const now = Date.now();
+            const timeSinceLastWheel = now - state.lastWheelTime;
+            
+            // Reset accumulated delta if user stopped scrolling
+            if (timeSinceLastWheel > idleResetTime) {
+                state.accumulatedDelta = 0;
+            }
+            state.lastWheelTime = now;
+            
+            // Normalize delta - cap extreme values from fast scrolling
+            const normalizedDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 80);
+            
+            // Accumulate delta
+            state.accumulatedDelta += normalizedDelta;
+            
+            // Check if threshold is reached
+            if (Math.abs(state.accumulatedDelta) >= scrollThreshold) {
+                const direction = state.accumulatedDelta > 0 ? 1 : -1;
+                changeImage(direction);
             }
         };
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('wheel', handleWheel, { passive: false });
         
         return () => {
-            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('wheel', handleWheel);
         };
-    }, [isInitialized, scrollThreshold, images.length, viewportHeight, lastChangeTime, cooldownPeriod, isChangingImage]);
+    }, [isInitialized, scrollThreshold, changeImage, idleResetTime]);
+
+    // Touch event handlers (mobile) - simplified and bulletproof
+    React.useEffect(() => {
+        if (!isInitialized) return;
+        
+        const handleTouchStart = (e) => {
+            const state = scrollStateRef.current;
+            if (state.isLocked) return;
+            
+            state.lastTouchY = e.touches[0].clientY;
+            state.accumulatedDelta = 0;
+        };
+        
+        const handleTouchMove = (e) => {
+            const state = scrollStateRef.current;
+            
+            // If locked or no touch start, ignore
+            if (state.isLocked || state.lastTouchY === null) {
+                if (state.isLocked) e.preventDefault();
+                return;
+            }
+            
+            const currentY = e.touches[0].clientY;
+            const deltaY = state.lastTouchY - currentY;
+            
+            state.accumulatedDelta += deltaY;
+            state.lastTouchY = currentY;
+            
+            // Check if threshold is reached
+            if (Math.abs(state.accumulatedDelta) >= scrollThreshold) {
+                const direction = state.accumulatedDelta > 0 ? 1 : -1;
+                e.preventDefault();
+                changeImage(direction);
+            }
+        };
+        
+        const handleTouchEnd = () => {
+            const state = scrollStateRef.current;
+            state.lastTouchY = null;
+            if (!state.isLocked) {
+                state.accumulatedDelta = 0;
+            }
+        };
+
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
+        
+        return () => {
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [isInitialized, scrollThreshold, changeImage]);
+
+    // Keyboard navigation support - with same lock protection
+    React.useEffect(() => {
+        if (!isInitialized) return;
+        
+        const handleKeyDown = (e) => {
+            const state = scrollStateRef.current;
+            
+            // Prevent key repeat and check lock
+            if (e.repeat || state.isLocked) return;
+            
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                changeImage(1);
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                changeImage(-1);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isInitialized, changeImage]);
 
     const bgIndex = Math.min(Math.max(currentImageIndex, 0), images.length - 1);
 
-
-
-    // Set up viewport height safely with responsive updates
-    React.useEffect(() => {
-        const updateViewportHeight = () => {
-            const newHeight = window.innerHeight;
-            setViewportHeight(newHeight);
-        };
-        
-        updateViewportHeight();
-        window.addEventListener('resize', updateViewportHeight);
-        window.addEventListener('orientationchange', updateViewportHeight);
-        
-        return () => {
-            window.removeEventListener('resize', updateViewportHeight);
-            window.removeEventListener('orientationchange', updateViewportHeight);
-        };
-    }, []);
-
+    // Initialize component - only runs once on mount
     React.useEffect(() => {
         setCurrentImageIndex(0);
         setPrevImageIndex(0);
-        setIsInitialized(false);
-        setLastChangeTime(0);
-        setIsChangingImage(false);
         
-        window.scrollTo(0, 0);
+        // Reset scroll state ref
+        scrollStateRef.current = {
+            lastChangeTime: 0,
+            isLocked: false,
+            accumulatedDelta: 0,
+            lastWheelTime: 0,
+            lastTouchY: null,
+            isInitialized: false,
+        };
+        
+        // Prevent default scroll behavior
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
         
         const initTimer = setTimeout(() => {
-            window.scrollTo(0, viewportHeight);
             setIsInitialized(true);
-        }, 300);
+            scrollStateRef.current.isInitialized = true;
+        }, 100);
         
-        return () => clearTimeout(initTimer);
-    }, [viewportHeight]);
-
-    const showScrollHint = currentImageIndex === 0;
+        return () => {
+            clearTimeout(initTimer);
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        };
+    }, []);
     
   return (
     <>
@@ -169,8 +277,8 @@ const HeroSection = () => {
             }
           }
           
-          // Separate stacking systems for different screen sizes
-          const width = window.innerWidth;
+          // Separate stacking systems for different screen sizes - use state for consistency
+          const width = screenWidth;
           let scale, y, opacity;
           
           if (width >= 768) {
@@ -284,15 +392,18 @@ const HeroSection = () => {
               initial={isComingFromLast ? { y: responsiveSlideDistance(), opacity: 0 } : false}
               transition={{ 
                 y: { 
-                  duration: isComingFromLast ? 0.6 : 0.5, // Smoother image transition duration
-                  ease: isComingFromLast ? [0.25, 0.46, 0.45, 0.94] : [0.23, 1, 0.32, 1] // Keep smooth easing
+                  duration: 0.6,
+                  ease: [0.33, 1, 0.68, 1] // Cubic-bezier for smooth deceleration
                 },
-                scale: { duration: 0.5, ease: [0.23, 1, 0.32, 1] }, // Smoother scale transition
+                scale: { 
+                  duration: 0.6, 
+                  ease: [0.33, 1, 0.68, 1]
+                },
                 opacity: { 
-                  duration: isComingFromLast ? 0.4 : 0.6, // Smoother opacity transitions
-                  ease: [0.25, 0.46, 0.45, 0.94] 
+                  duration: isComingFromLast ? 0.4 : 0.5,
+                  ease: [0.4, 0, 0.2, 1] // Material Design standard easing
                 },
-                zIndex: { duration: 0.05, ease: "easeInOut" }
+                zIndex: { duration: 0.01, ease: "linear" }
               }}
             />
           )
@@ -312,16 +423,16 @@ const HeroSection = () => {
                   px-3 xs:px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16"
                 initial={{ 
                   opacity: index === 0 ? 1 : 0, 
-                  y: index === 0 ? 0 : 20 
+                  y: index === 0 ? 0 : 15 
                 }}
                 animate={{
                   opacity: isActive ? 1 : 0,
-                  y: isActive ? 0 : 20,
+                  y: isActive ? 0 : 15,
                 }}
                 transition={{
-                  duration: 0.6,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                  delay: isActive && isInitialized ? 0.5 : 0 // Only delay when initialized and active
+                  duration: 0.5,
+                  ease: [0.33, 1, 0.68, 1],
+                  delay: isActive && isInitialized ? 0.35 : 0
                 }}
               >
                 <p className="text-white font-medium 
@@ -416,17 +527,7 @@ const HeroSection = () => {
 
         </div> {/* Close image-stack-container */}
 
-        
-
       </motion.section>
-
-      <div 
-        ref={containerRef}
-        style={{ height: `${viewportHeight * 3}px` }}
-        className="relative z-0 w-full min-h-screen"
-      >
-        <div className="absolute inset-0 pointer-events-none" />
-      </div>
     </>
   )
 }
