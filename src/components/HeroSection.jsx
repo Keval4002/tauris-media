@@ -6,7 +6,7 @@ import { ProgressIndicator } from './HeroSection/ProgressIndicator';
 import { useScreenSize } from './HeroSection/hooks/useScreenSize';
 import { useHeroScroll } from './HeroSection/hooks/useHeroScroll';
 import { HERO_DATA, HERO_CONFIG, ANIMATION_EASING } from './HeroSection/constants';
-import { FiArrowUpRight } from 'react-icons/fi';
+import { FiArrowUpRight, FiMail } from 'react-icons/fi'; // Added FiMail
 
 const NARRATIVE_TEXTS = [
   "Timeless Elegance",
@@ -57,27 +57,29 @@ const HeroSection = () => {
         } 
       }}
     >
-      {/* --- 1. Index Indicator (Top Left) --- */}
-      <div className='absolute left-5 top-24 md:left-12 md:top-32 z-20 pointer-events-none'>
+      {/* --- 1. Top Left: Index + Mobile Mail Icon --- */}
+      <div className='absolute left-5 top-24 md:left-12 md:top-32 z-20 flex items-center gap-4'>
+          {/* Index Counter */}
           <h3 className='text-sm md:text-lg text-[#e7dace] font-light font-manrope'>
             [ 0{currentImageIndex+1} ]
           </h3>
+
+          {/* Mobile Only: Mail Icon */}
+          <a href="mailto:tauris.media@gmail.com" className="md:hidden text-[#e7dace] text-lg opacity-80 active:scale-95 transition-transform">
+             <FiMail />
+          </a>
       </div>
 
-      {/* --- 2. Adaptive Scroll Indicator (Top Right) --- */}
-      {/* Mobile: flex-row (Text left, Line right)
-         Desktop: flex-col (Text top, Line bottom) 
-      */}
-      <div className='absolute right-5 top-24 md:right-12 md:top-32 z-20 pointer-events-none flex flex-row items-center md:flex-col md:items-end gap-2'>
+      {/* --- 2. Top Right: Scroll + Line + Mobile Narrative --- */}
+      <div className='absolute right-5 top-24 md:right-12 md:top-32 z-20 pointer-events-none flex flex-col items-end gap-2'>
           <h3 className='text-sm md:text-lg text-[#e7dace] font-light font-manrope tracking-wide'>
             Scroll
           </h3>
           
-          {/* Line Container: Horizontal (w-12 h-px) on Mobile, Vertical (w-px h-12) on Desktop */}
+          {/* Scroll Line */}
           <div className='relative bg-[#e7dace]/30 overflow-hidden w-8 h-[1px] md:w-[1px] md:h-12'>
             <motion.div 
               className='absolute bg-[#e7dace]'
-              // Switch animation based on screen size
               style={{
                 top: 0,
                 left: 0,
@@ -85,8 +87,8 @@ const HeroSection = () => {
                 height: isMobile ? "100%" : "100%" 
               }}
               animate={isMobile 
-                ? { width: ["0%", "100%", "0%"], left: ["0%", "0%", "100%"] } // Horizontal Anim
-                : { height: ["0%", "100%", "0%"], top: ["0%", "0%", "100%"] }   // Vertical Anim
+                ? { width: ["0%", "100%", "0%"], left: ["0%", "0%", "100%"] } 
+                : { height: ["0%", "100%", "0%"], top: ["0%", "0%", "100%"] } 
               }
               transition={{ 
                 duration: 2, 
@@ -96,22 +98,36 @@ const HeroSection = () => {
               }}
             />
           </div>
+
+          {/* Mobile Only: Narrative Text (Below Line) */}
+          <div className='md:hidden mt-2 h-[20px] overflow-hidden flex items-start justify-end'>
+            <AnimatePresence mode='wait'>
+                <motion.h3
+                    key={activeText}
+                    className='text-xs text-[#e7dace] font-light font-manrope text-right whitespace-nowrap'
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -10, opacity: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                >
+                    {activeText}
+                </motion.h3>
+            </AnimatePresence>
+          </div>
       </div>
 
-      {/* --- 3. Email Link (Bottom Left) --- */}
+      {/* --- 3. Bottom Left: Desktop Full Email Link --- */}
       <motion.a 
         href="mailto:tauris.media@gmail.com"
-        className='absolute left-5 bottom-12 z-20 cursor-pointer group'
+        className='hidden md:block absolute left-12 bottom-12 z-20 cursor-pointer group'
         initial="initial"
         whileHover="hover"
       >
         <div className='flex items-center gap-1'>
           <div className='relative'>
-            {/* Reduced text size for mobile (text-xs) */}
-            <h3 className='text-xs md:text-sm text-[#e7dace] font-light font-manrope'>
+            <h3 className='text-sm text-[#e7dace] font-light font-manrope'>
               tauris.media@gmail.com
             </h3>
-            
             <motion.span
               className='absolute bottom-0 left-0 h-[1px] bg-[#e7dace] w-full origin-right'
               variants={{
@@ -123,7 +139,6 @@ const HeroSection = () => {
               }}
             />
           </div>
-
           <motion.div
             variants={{
               initial: { x: 0, y: 0, opacity: 0.7 },
@@ -131,13 +146,13 @@ const HeroSection = () => {
             }}
             transition={{ duration: 0.2 }}
           >
-            <FiArrowUpRight className='text-[#e7dace] text-sm md:text-xl' />
+            <FiArrowUpRight className='text-[#e7dace] text-xl' />
           </motion.div>
         </div>
       </motion.a>
 
-      {/* --- 4. Narrative Text (Bottom Right) --- */}
-      <div className='absolute right-5 bottom-12 z-20 pointer-events-none overflow-hidden h-auto min-h-[30px] flex items-end justify-end'>
+      {/* --- 4. Bottom Right: Desktop Narrative Text --- */}
+      <div className='hidden md:flex absolute right-12 bottom-12 z-20 pointer-events-none overflow-hidden h-auto min-h-[30px] flex-col items-end justify-end'>
         <AnimatePresence mode='wait'>
           <motion.div
             key={activeText} 
@@ -150,8 +165,7 @@ const HeroSection = () => {
               ease: [0.16, 1, 0.3, 1] 
             }}
           >
-            {/* Reduced text size for mobile (text-xs) to match Email */}
-            <h3 className='text-xs md:text-lg text-[#e7dace] font-light font-manrope text-right'>
+            <h3 className='text-xl text-[#e7dace] font-light font-manrope text-right mb-1'>
               {activeText}
             </h3>
             

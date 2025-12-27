@@ -70,12 +70,14 @@ const Projects = () => {
         <div className='absolute top-0 left-0 w-full h-full bg-black/30' />
       </div>
 
-      {/* Horizontal scroll section - REMOVED bg-black here so video shows */}
+      {/* Horizontal scroll section */}
       <section ref={targetRef} className='relative h-[300vh] z-10'>
         <div className='sticky top-0 h-screen flex flex-col items-start justify-center overflow-hidden pt-24 pb-20 sm:pb-24 pl-0'>
           
-          {/* Title - Fixed Animation */}
-          <div className='absolute bottom-6 left-0 w-full text-center z-20 pointer-events-none px-4'>
+          {/* Title - RESPONSIVE POSITIONING ADDED */}
+          {/* Mobile: relative mb-8 (sits above cards) */}
+          {/* Desktop: absolute bottom-6 (sits at bottom) */}
+          <div className='relative mb-8 md:mb-0 md:absolute md:bottom-6 md:left-0 w-full text-center z-20 pointer-events-none px-4'>
              <motion.div
                initial={{ opacity: 0, y: 50 }}
                whileInView={{ opacity: 1, y: 0 }} 
@@ -89,7 +91,7 @@ const Projects = () => {
              </motion.div>
           </div>
 
-          {/* Horizontal scrolling cards - Fixed Alignment */}
+          {/* Horizontal scrolling cards */}
           <motion.div 
             style={{ x }} 
             className='flex gap-4 sm:gap-6 md:gap-12 lg:gap-16 px-4 sm:px-8 md:px-16 lg:px-20 w-fit items-center'
